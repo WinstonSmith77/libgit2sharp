@@ -117,12 +117,12 @@ namespace LibGit2Sharp.Core
 
             foreach (var currentCommit in repo.Commits.QueryBy(filter))
             {
-                var currentPath = map.Keys.Count > 0 ? map[currentCommit] : path;
+                var currentPath = map.ContainsKey(currentCommit) ? map[currentCommit] : path;
                 var currentTreeEntry = currentCommit.Tree[currentPath];
 
                 if (currentTreeEntry == null)
                 {
-                    yield break;
+                    continue;
                 }
 
                 var parentCount = currentCommit.Parents.Count();

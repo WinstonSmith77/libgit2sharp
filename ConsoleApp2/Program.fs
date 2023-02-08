@@ -11,4 +11,9 @@ let identity = new Identity("Matthias Henning", "matze_henning@gmx.de")
 let createSignature () = new Signature(identity, DateTimeOffset.Now);
 
 let repo = new Repository(folder)
-let commits = repo.Commits.QueryBy("skia/fonts.linq") |> List.ofSeq
+let commits = repo.Commits.QueryBy("Skia/dash.linq") |> List.ofSeq
+
+"a" |>  ignore
+
+Console.ReadKey()
+|> ignore;
