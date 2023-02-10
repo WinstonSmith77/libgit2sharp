@@ -1,19 +1,43 @@
-﻿// For more information see https://aka.ms/fsharp-console-apps
-
-open System
+﻿
+open System.IO
 open LibGit2Sharp
+open System
 
-printfn "Hello from F#"
+let folder = Directory.GetCurrentDirectory() |> Path.GetDirectoryName 
 
-let folder = "C:\Users\Henning\Desktop\einarbeitung\pdf"// Util.CurrentQueryPath |> Path.GetDirectoryName 
+
 
 let identity = new Identity("Matthias Henning", "matze_henning@gmx.de")        
 let createSignature () = new Signature(identity, DateTimeOffset.Now);
 
-let repo = new Repository(folder)
-let commits = repo.Commits.QueryBy("Skia/dash.linq") |> List.ofSeq
+use repo = new Repository(folder)
 
-"a" |>  ignore
+let getLastAccess (file: string) = 
+    try 
+        let head = repo.Commits.QueryBy(file) |> Seq.head
+        Some  head.Commit.Committer.When 
+    with     
+       :? Exception as e  -> None
 
-Console.ReadKey()
-|> ignore;
+let addRelative path =   (Path.GetRelativePath(folder, path).Replace(@"\", "/"), path)
+    
+let notGit (path:string) = path.Contains(".git") |> not
+
+let files = Directory.GetFiles(folder, "*", SearchOption.AllDirectories)
+let dirs = Directory.GetDirectories(folder, "*", SearchOption.AllDirectories)
+
+let folderAndDirs = Array.append files dirs  |> Array.where notGit |> Array.map addRelative 
+
+let inner file = 
+                  let lastAccess = file |> fst |> getLastAccess 
+                  match lastAccess with
+                  | None -> None
+                  | Some lastAccess -> Some(file, lastAccess)
+
+let lastAccess = folderAndDirs |> Seq.choose inner  
+
+let setDate  ((_, pathAbs : string), date : DateTimeOffset) = match File.Exists pathAbs with
+                                                                  | true -> () // File.SetLastWriteTimeUtc(pathAbs, date.UtcDateTime)
+                                                                  | false -> ()// Directory.SetLastWriteTimeUtc(pathAbs, date.UtcDateTime)
+
+lastAccess |> Seq.iter setDate
